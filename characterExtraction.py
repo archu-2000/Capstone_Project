@@ -11,9 +11,9 @@ from pattern.en import parse, Sentence, mood
 from pattern.db import csv
 from pattern.vector import Document, NB
 
-def readText():
+def readText(fpath):
 
-    with open("ip.txt", "r") as f:
+    with open(fpath, "r") as f:
         # text = f.read().decode('utf-8-sig')
         text = f.read()
     return text
@@ -124,8 +124,8 @@ def writeAnalysis(sentenceAnalysis):
         for item in sentenceAnalysis.items():
             f.write("%s:%s\n" % item)
             
-def writeToJSON(sentenceAnalysis):
-	with open("sentenceAnalysis.json", "w") as f:
+def writeToJSON(sentenceAnalysis, loc):
+	with open(loc+"/sentenceAnalysis.json", "w") as f:
 		entities = sentenceAnalysis.keys()
 		json.dump(sentenceAnalysis, f)
 '''
