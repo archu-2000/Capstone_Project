@@ -131,11 +131,26 @@ def writeToJSON(sentenceAnalysis, loc):
 
 
 
+
+
 def mergeNames_count(l):
+    d_characters=dict()
+    for name in l:
+        if name not in d_characters:
+            d_characters[name]=1
+        else:
+            d_characters[name]+=1
+    
+    # print(d_characters)
+
+    l_new=[ele for ele in d_characters.keys() if d_characters[ele]>1]
+    
     temp_list=[] 
     d=dict()
     for name in l:
+        if name not in l_new: continue
         if name=="Mr.":continue
+        if len(name)==1:continue
         flag=0
         for j in temp_list:
             i=j[0]
@@ -170,14 +185,14 @@ def mergeNames_count(l):
         if flag==0:
             temp_list.append([name, 1])
         
-        major_characters = [ele[0] for ele in temp_list if ele[1] >=3]
+        major_characters = [ele[0] for ele in temp_list if ele[1] >=10]
         # print("d:", d)
         d_new=dict()
         for key in d:
             if key in major_characters:
                 d_new[key]=list(set(d[key]))
 
-
+    # return d, temp_list
     return d_new, major_characters, temp_list
 
 def compare_lists_new(sentenceList, majorCharacters, d):
@@ -194,24 +209,42 @@ def compare_lists_new(sentenceList, majorCharacters, d):
     return characterSentences
 
 
+def getCharacters(text):
+    characters=[]
+    for sent in nltk.sent_tokenize(text):
+        if sent.isupper(): continue
+        # words = [word for word in nltk.word_tokenize(sent) if word[0].isupper()]
+        for chunk in nltk.ne_chunk(nltk.pos_tag(nltk.word_tokenize(sent))):
+        # for chunk in nltk.ne_chunk(nltk.pos_tag(words)):
+            if hasattr(chunk, 'label'):
+                if chunk.label()=="PERSON":
+                    characters.append(' '.join(c[0] for c in chunk))
+    return characters
+
+
 if __name__ == "__main__":
-    text = readText('oliver-twist-shortened.txt')
-
-    chunkedSentences = chunkSentences(text)
-    # print(list(chunkedSentences))
-    entityNames = buildDict(chunkedSentences)
-    # print(list(entityNames))
-    removeStopwords(entityNames)
-    majorCharacters = getMajorCharacters(entityNames)
-    # print(list(majorCharacters))
+    text = readText('user_sessions/ip.txt')
+    entityNames = getCharacters(text)
+    d, mc, tl = mergeNames_count(entityNames)
+    print(mc)
+    # chunkedSentences = chunkSentences(text)
+    # # print(list(chunkedSentences))
+    # entityNames = buildDict(chunkedSentences)
+    # # print(list(entityNames))
+    # removeStopwords(entityNames)
+    # majorCharacters = getMajorCharacters(entityNames)
+    # # print(list(majorCharacters))
     
-    sentenceList = splitIntoSentences(text)
-    characterSentences = compareLists(sentenceList, majorCharacters)
-    # print(list(characterSentences))
+    # sentenceList = splitIntoSentences(text)
+    # characterSentences = compareLists(sentenceList, majorCharacters)
+    # # print(list(characterSentences))
   
-    characterTones = extractTones(characterSentences)
+    # characterTones = extractTones(characterSentences)
 
-    sentenceAnalysis = defaultdict(list,[(k, [characterSentences[k], characterTones[k]]) for k in characterSentences])
-    print(sentenceAnalysis)
+    # sentenceAnalysis = defaultdict(list,[(k, [characterSentences[k], characterTones[k]]) for k in characterSentences])
+    # print(sentenceAnalysis)
     # writeAnalysis(sentenceAnalysis)
 
+
+    # d, t=mergeNames_count(l)
+    # print(d, t)

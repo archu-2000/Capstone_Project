@@ -1,9 +1,11 @@
 from flask import * 
-from characterExtraction import *
+from characterExtraction_new import *
 from watson_edited import *
 # from main4 import *
 import os, time, sqlite3, hashlib
 app = Flask(__name__)  
+import PyPDF2
+
 
 loc = ''
 fpath = ''
@@ -77,34 +79,100 @@ def success():
 	    f.save("ip.txt")  
 	    return render_template("success.html", name = f.filename)  
 
+
+
+@app.route('/select_new', methods = ['POST'])
+def select_new():
+
+	if request.method == 'POST':
+		
+		f = request.files['file']
+		f_name=f.filename
+		
+		if f_name.endswith(".txt"):
+		
+			f.save("ip.txt")
+		if f_name.endswith(".pdf"):
+			
+			f.save("ip.pdf")
+
+
+			pdffileobj=open("ip.pdf",'rb')
+			pdfreader=PyPDF2.PdfFileReader(pdffileobj)
+			x=pdfreader.numPages
+			file1=open("ip.txt","a")
+			for page_count in range(x):
+				page = pdfreader.getPage(page_count)
+				page_data = page.extractText()
+				file1.write(page_data)
+
+			# pageobj=pdfreader.getPage(0)
+			# text=pageobj.extractText()
+			
+			
+			# file1.writelines(text) 
+		return render_template("select.html")  
+	#return render_template("select.html")
+
+
+
+
+
+
+
+
 @app.route('/select', methods = ['POST'])
 def select():
 	if request.method == 'POST':  
-	    f = request.files['file']  
+		f = request.files['file']  
 	    #f.save("ip.txt") 
-	    global uname
-	    loc1 = "/static/"
-	    if os.path.exists(loc1):
-		    for i in os.listdir(loc1):
-		    	if i.startswith(uname):
-		    		os.remove(loc1+'/'+i)
+		global uname
+		loc1 = "/static/"
+		if os.path.exists(loc1):
+			for i in os.listdir(loc1):
+				if i.startswith(uname):
+					os.remove(loc1+'/'+i)
 	    #dir_name = "user_"+str(time.time())
 	    #dir_name = "user1"
-	    path = "/user_sessions"
-	    global loc
+		path = "user_sessions"
+		global loc
 		#loc = path+'/'+uname
-	    loc=path+'/'+uname
+		loc=path+'/'+uname
 		# loc=os.path.join(path, uname)
-	    if os.path.exists(loc):
-		    for i in os.listdir(loc):
+		if os.path.exists(loc):
+			for i in os.listdir(loc):
 		    	#print("]]]]]]]]]]]]]]] ",uname)
-		    	os.remove(loc+'/'+i)
-		    os.rmdir(loc)
-	    os.mkdir(loc)
-	    global fpath
-	    fpath=os.path.join(loc,"ip.txt")
-	    f.save(fpath)    #change paths of static file and image and check if the image exists before processing it.
-	    return render_template("select.html")  
+				os.remove(loc+'/'+i)
+			os.rmdir(loc)
+		os.mkdir(loc)
+		global fpath
+
+		f_name=f.filename
+		if f_name.endswith(".txt"):
+
+			fpath=os.path.join(loc,"ip.txt")
+			f.save(fpath)    #change paths of static file and image and check if the image exists before processing it.
+
+		if f_name.endswith(".pdf"):
+			fpath_pdf=os.path.join(loc,"ip.pdf")
+			f.save(fpath_pdf)
+			pdffileobj=open(fpath_pdf,'rb')
+			pdfreader=PyPDF2.PdfFileReader(pdffileobj)
+			x=pdfreader.numPages
+			# pdffileobj.close()
+
+			fpath=os.path.join(loc,"ip.txt")
+			file1=open(fpath,"a")
+
+			for page_count in range(x):
+				page = pdfreader.getPage(page_count)
+				page_data = page.extractText()
+				file1.write(page_data)
+			
+			file1.close()
+			pdffileobj.close()
+
+	return render_template("select.html")  
 	#return render_template("select.html")
 	
 character_name=''
@@ -114,40 +182,43 @@ def personality_profiling():
 		
 
 
-		text = readText(fpath)
-		chunkedSentences = chunkSentences(text)
-		# print(list(chunkedSentences))
-		entityNames = buildDict(chunkedSentences)
-		# print(list(entityNames))
-		removeStopwords(entityNames)
-		majorCharacters = getMajorCharacters(entityNames)
-		# print(list(majorCharacters))
+		# text = readText(fpath)
+		# chunkedSentences = chunkSentences(text)
+		# # print(list(chunkedSentences))
+		# entityNames = buildDict(chunkedSentences)
+		# # print(list(entityNames))
+		# removeStopwords(entityNames)
+		# majorCharacters = getMajorCharacters(entityNames)
+		# # print(list(majorCharacters))
 
-		sentenceList = splitIntoSentences(text)
-		characterSentences = compareLists(sentenceList, majorCharacters)
-		#print("@@@@@@@@@@@@@@@@: ", characterSentences)
+		# sentenceList = splitIntoSentences(text)
+		# characterSentences = compareLists(sentenceList, majorCharacters)
+		# #print("@@@@@@@@@@@@@@@@: ", characterSentences)
 
-		#characterTones = extractTones(characterSentences)
+		# #characterTones = extractTones(characterSentences)
 
-		sentenceAnalysis = defaultdict(list,[(k, [characterSentences[k], 0]) for k in characterSentences])
-		#CHANGE THE SENTENCE ANALAYSIS FILE NAME AND PATH
+		# sentenceAnalysis = defaultdict(list,[(k, [characterSentences[k], 0]) for k in characterSentences])
+		# #CHANGE THE SENTENCE ANALAYSIS FILE NAME AND PATH
 
 		global fpath
 		global loc
-		writeToJSON(sentenceAnalysis, loc)
+		
 		#print(sentenceAnalysis)
 		# writeAnalysis(sentenceAnalysis)
 
-		''''
-		text = readText()
+		
+		text = readText(fpath)
 		entityNames = getCharacters(text)
 		d, mc, tl = mergeNames_count(entityNames)
 		sentenceList = splitIntoSentences(text)
 		characterSentences = compare_lists_new(sentenceList, mc, d)
 		print(list(characterSentences))
-		'''
+		sentenceAnalysis = defaultdict(list,[(k, [characterSentences[k], 0]) for k in characterSentences])
+		writeToJSON(sentenceAnalysis, loc)
 
-		return render_template("personality_profiling.html", names= majorCharacters)
+
+
+		return render_template("personality_profiling.html", names= mc)
 
 @app.route("/watson", methods = ['POST'])
 def watson():
@@ -163,8 +234,12 @@ def watson():
 		tone_analyzer = authenticate()
 		global loc
 		character_personality_plot(character_name, tone_analyzer, image, loc)
-	
-	return render_template("watson.html", image=image)
+
+		i2="social_"+image
+		i1="emotion_"+image
+		i3="language_"+image
+
+	return render_template("watson.html", image1=i1, image2=i2, image3=i3)
 	
 @app.route("/logout", methods = ['POST'])
 def logout():

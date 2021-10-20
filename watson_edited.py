@@ -15,21 +15,17 @@ def authenticate():
 
 	tone_analyzer.set_service_url('https://api.au-syd.tone-analyzer.watson.cloud.ibm.com/instances/78368241-41bf-4585-bd43-0e8e7cfc6d48')
 	return tone_analyzer
-'''
-text = "Hermione is very smart. Hermione is beautiful"
-text2 = "Hello Ha\nrry.I will kill harry."
-print(text)
 
-'''
-def character_personality_plot(character, tone_analyzer, image_name):
-	f = open("sentenceAnalysis.json",)
+def character_personality_plot(character, tone_analyzer, image_name, loc):
+	print(loc)
+	f = open(loc+"/sentenceAnalysis.json",)
 	temp = json.load(f)
 	sentences = temp[character][0]
 	#print(len(sentences))
 	#sentences=['I am very pleased with him.', 'I am satisfied with him.', 'I am neutral at him.', 'I am furious at him.', 'melancholy']
 
 	text =''
-	sentences = sentences[:10]
+	#sentences = sentences[:10]
 	for sentence in sentences:
 		sentence = sentence.replace("\n",'') + " "
 		text+=sentence
@@ -38,22 +34,53 @@ def character_personality_plot(character, tone_analyzer, image_name):
 	tone_analysis = tone_analyzer.tone(
 			{'text': text},
 			content_type='application/json',
-			tones = ['emotion']
+			tones = ['emotion', 'social', 'language']
 		).get_result()
 
-	# print(json.dumps(tone_analysis, indent=2))
+	print(json.dumps(tone_analysis, indent=2))
 
-	#social_arr={"Openness":[],"Conscientiousness":[],"Extraversion":[],"Agreeableness":[],"Emotional Range":[]}
-
+	social_arr={"Openness":[],"Conscientiousness":[],"Extraversion":[],"Agreeableness":[],"Emotional Range":[]}
 	emotion_arr={"Anger":[], "Disgust":[], "Fear":[], "Joy":[], "Sadness":[] }
+	language_arr={"Analytical":[], "Confident":[], "Tentative":[]}
+
+	# print(tone_analysis)
+
+
+
 
 	for i in tone_analysis["sentences_tone"]:
 		for j in i["tone_categories"][0]["tones"]:
 			emotion_arr[j["tone_name"]].append(j["score"])
 
-	#print(emotion_arr)
+		for j in i["tone_categories"][2]["tones"]:
+			social_arr[j["tone_name"]].append(j["score"])
+		
+		for j in i["tone_categories"][1]["tones"]:
+			language_arr[j["tone_name"]].append(j["score"])
 
-	x=np.array([i+1 for i in range(len(emotion_arr["Anger"]))])
+
+
+	#print(emotion_arr)
+	emotion_arr_2={"Anger":[], "Disgust":[], "Fear":[], "Joy":[], "Sadness":[] }
+	social_arr_2={"Openness":[],"Conscientiousness":[],"Extraversion":[],"Agreeableness":[],"Emotional Range":[]}
+	language_arr_2={"Analytical":[], "Confident":[], "Tentative":[]}
+	# print(len(emotion_arr["Anger"]))
+	
+
+	#---------------------------------emotion----------------------------------------------------------
+	for i in emotion_arr:
+		j=0
+		#k =int(len(emotion_arr[i])/10)
+		k =int(len(emotion_arr[i])/5)
+		while j<len(emotion_arr[i]):
+			print(j,k)
+			avg_temp = sum(emotion_arr[i][j:j+k])/k
+			emotion_arr_2[i].append(avg_temp)
+			j+=k
+
+	print(emotion_arr_2)
+
+	x=np.array([i+1 for i in range(len(emotion_arr_2["Anger"]))])
 
 	 
 	# Returns evenly spaced numbers
@@ -62,7 +89,7 @@ def character_personality_plot(character, tone_analyzer, image_name):
 	plt.clf()
 	for i,key in enumerate(emotion_arr):
 		
-		X_Y_Spline = make_interp_spline(x, np.array(emotion_arr[key]))
+		X_Y_Spline = make_interp_spline(x, np.array(emotion_arr_2[key]))
 		X_ = np.linspace(x.min(), x.max(), 500)
 		Y_ = X_Y_Spline(X_)
 		plt.plot(X_,Y_)
@@ -75,25 +102,84 @@ def character_personality_plot(character, tone_analyzer, image_name):
 	os.mkdir(static)
 	print("loc = ",loc)
 	plt.savefig(static+image_name)'''
-	plt.savefig('static/'+image_name)
+	plt.savefig('static/emotion_'+image_name)
+
+
+#####-----------------------social-------------------------------------------------------------------------
+
+	for i in social_arr:
+		j=0
+		#k =int(len(emotion_arr[i])/10)
+		k =int(len(social_arr[i])/5)
+		while j<len(social_arr[i]):
+			print(j,k)
+			avg_temp = sum(social_arr[i][j:j+k])/k
+			social_arr_2[i].append(avg_temp)
+			j+=k
+
+	print(social_arr_2)
+
+	x=np.array([i+1 for i in range(len(social_arr_2["Openness"]))])
+
+	 
+	# Returns evenly spaced numbers
+	# over a specified interval.
+	
+	plt.clf()
+	for i,key in enumerate(social_arr):
+		
+		X_Y_Spline = make_interp_spline(x, np.array(social_arr_2[key]))
+		X_ = np.linspace(x.min(), x.max(), 500)
+		Y_ = X_Y_Spline(X_)
+		plt.plot(X_,Y_)
+
+
+	plt.legend(["Openness","Conscientiousness","Extraversion","Agreeableness","Emotional Range"])
+	plt.title(str(character))
+	#plt.show()
+	'''static = os.path.join(loc, 'static/')
+	os.mkdir(static)
+	print("loc = ",loc)
+	plt.savefig(static+image_name)'''
+	plt.savefig('static/social_'+image_name)
 
 
 
-#character_personality_plot('Mr. Bumble')
+	###-----------------------------------------language---------------------------------------------------------
 
-'''
-tone_analysis = tone_analyzer.tone(
-	    {'text': text},
-	    content_type='application/json',
-	    tones = ['social']
-	).get_result()
-print(json.dumps(tone_analysis, indent=2))
 
-tone_analysis = tone_analyzer.tone(
-	    {'text': text2},
-	    content_type='application/json',
-	    tones = ['social']
-	).get_result()
+	for i in language_arr:
+		j=0
+		#k =int(len(emotion_arr[i])/10)
+		k =int(len(language_arr[i])/5)
+		while j<len(language_arr[i]):
+			print(j,k)
+			avg_temp = sum(language_arr[i][j:j+k])/k
+			language_arr_2[i].append(avg_temp)
+			j+=k
 
-print(json.dumps(tone_analysis, indent=2))
-'''
+	print(language_arr_2)
+
+	x=np.array([i+1 for i in range(len(language_arr_2["Analytical"]))])
+
+	 
+	# Returns evenly spaced numbers
+	# over a specified interval.
+	
+	plt.clf()
+	for i,key in enumerate(language_arr):
+		
+		X_Y_Spline = make_interp_spline(x, np.array(language_arr_2[key]))
+		X_ = np.linspace(x.min(), x.max(), 500)
+		Y_ = X_Y_Spline(X_)
+		plt.plot(X_,Y_)
+
+
+	plt.legend(["Analytical", "Confident", "Tentative"])
+	plt.title(str(character))
+	#plt.show()
+	'''static = os.path.join(loc, 'static/')
+	os.mkdir(static)
+	print("loc = ",loc)
+	plt.savefig(static+image_name)'''
+	plt.savefig('static/language_'+image_name)
