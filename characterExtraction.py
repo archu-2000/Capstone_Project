@@ -25,12 +25,7 @@ def chunkSentences(text):
                           for sentence in sentences]
     taggedSentences = [nltk.pos_tag(sentence)
                        for sentence in tokenizedSentences]
-    if nltk.__version__[0:2] == "2.":
-        chunkedSentences = nltk.batch_ne_chunk(taggedSentences, binary=True)
-    else:
-        chunkedSentences = nltk.ne_chunk_sents(taggedSentences, binary=True)
-    return chunkedSentences
-
+                       
 
 def extractEntityNames(tree, _entityNames=None):
     if _entityNames is None:

@@ -141,6 +141,9 @@ def select():
 	    #dir_name = "user_"+str(time.time())
 	    #dir_name = "user1"
 		path = "user_sessions"
+		if not os.path.exists(path):
+			os.makedirs(path)
+			
 		global loc
 		#loc = path+'/'+uname
 		loc=path+'/'+uname

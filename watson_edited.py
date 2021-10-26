@@ -97,6 +97,8 @@ def character_personality_plot(character, tone_analyzer, image_name, loc):
 			j+=k
 
 	#print(emotion_arr_2)
+	for key in emotion_arr_2:
+		emotion_arr_2[key].pop()
 
 	x=np.array([i+1 for i in range(len(emotion_arr_2["Anger"]))])
 
@@ -139,6 +141,8 @@ def character_personality_plot(character, tone_analyzer, image_name, loc):
 			j+=k
 
 	#print(social_arr_2)
+	for key in social_arr_2:
+		social_arr_2[key].pop()
 
 	x=np.array([i+1 for i in range(len(social_arr_2["Openness"]))])
 
@@ -180,6 +184,8 @@ def character_personality_plot(character, tone_analyzer, image_name, loc):
 			j+=k
 
 	#print(language_arr_2)
+	for key in language_arr_2:
+		language_arr_2[key].pop()
 
 	x=np.array([i+1 for i in range(len(language_arr_2["Analytical"]))])
 
