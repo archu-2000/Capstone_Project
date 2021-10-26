@@ -256,9 +256,10 @@ def convert_to_capitals(char_list):
 
 # In[ ]:
 
-def network_graph_main(loc, iname):
+def network_graph_main(loc, iname, switch):
 
-        infile = loc+'/ip.txt'
+    
+        infile = loc+"/"+switch
         outfile = 'out.gexf'
 
         with open(infile, 'r') as file:
@@ -268,7 +269,7 @@ def network_graph_main(loc, iname):
 
         chars = []
 
-        with open("chars.txt", 'r') as file:
+        with open(loc+"/chars.txt", 'r') as file:
             for line in file:
                 name = line.strip().lower()
                 chars.append(name)
@@ -282,10 +283,13 @@ def network_graph_main(loc, iname):
         trigrm = nltk.trigrams(tokens)
         trigrms = list(trigrm)
 
+        print(tokens,"\n\n\n\n", bigrms,"\n\n\n\n", trigrms)
+
         char_tuples = char_tuple_f(chars)
+        print(char_tuples)
         ind_dic = indices_dic(char_tuples, tokens, bigrms, trigrms)
         grand_dic = links_dic_f(ind_dic, 20)
-
+        print(grand_dic)
         new_chars = remove_zero_link_chars(grand_dic, chars)
         edges_tuples = edge_tuples_f(grand_dic)
         node_chars = convert_to_capitals(new_chars)
@@ -297,7 +301,8 @@ def network_graph_main(loc, iname):
         edges = G.edges()
         weights = [G[u][v]['weight'] * 50 for u,v in edges]
 
-        #plt.figure(3,figsize=(10,10)) 
+        #plt.figure(figsize=(12,12)) 
+        plt.clf()
         nx.draw_shell(G, with_labels=True,  width = weights, node_size=100, font_size=10)
 
         import community
@@ -309,7 +314,7 @@ def network_graph_main(loc, iname):
             os.remove('static/'+iname)
         except:
             pass
-        plt.savefig('static/'+iname, dpi=300, bbox_inches='tight')
+        plt.savefig('static/'+iname, dpi=600,  bbox_inches='tight')
         d=nx.degree_centrality(G)
         centrality_ranks=list(dict(sorted(d.items(), key = lambda x : x[-1], reverse=True)))
         return centrality_ranks[:10]

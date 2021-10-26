@@ -10,18 +10,18 @@ import matplotlib.pyplot as plt
 import networkx as nx
 
 
-from src.third_party.bert_ner.bert import Ner
-
 
 class Literature():
 
-	def __init__(self,text):
+	def __init__(self,text, loc):
+		self.loc = loc
 		self.filename='ip.txt'
 		self.text=text
 		self.lines=self.text.split('\n')
 		self.headings=self.getHeadings()
 
 		self.chapters=self.getChapterContent()
+		self.chapterNums = 1
 
 		# print(len(self.chapters))
 
@@ -32,21 +32,30 @@ class Literature():
 		numbers = range(1,len(self.chapters)+1)
 		maxNum = max(numbers)
 		maxDigits = len(str(maxNum))
-		chapterNums = [str(number).zfill(maxDigits) for number in numbers]
+		self.chapterNums = [str(number).zfill(maxDigits) for number in numbers]
 		
-		print("chapterNums: ", chapterNums)
+		print("chapterNums: ", self.chapterNums)
 
 		basename=os.path.basename(self.filename)
 		noExt = os.path.splitext(basename)[0]
 
-		outDir = noExt + '_chapters'
+		outDir = self.loc + "/split_chapters"
 
 		# print(basename,noExt,outDir)
 
-		if not os.path.exists(outDir):
-			os.makedirs(outDir)
+		if os.path.exists(outDir):
+			for i in os.listdir(outDir):
+				try:
+					os.remove(outDir+'/'+i)
+				except:
+					for j in os.listdir(outDir+'/'+i):
+						os.remove(outDir+'/'+i+'/'+j)
+						
+					os.rmdir(outDir+'/'+i)
+			os.rmdir(outDir)
+		os.mkdir(outDir)
 
-		for num,chapter in zip(chapterNums,self.chapters):
+		for num,chapter in zip(self.chapterNums,self.chapters):
 			path = outDir + '/' + num + '.txt'
 
 			# print("chapter before: ",chapter)
@@ -125,7 +134,7 @@ class Literature():
 
 		# print(headings)
 		return headings
-
+'''
 class Entity:
 
 	def __init__(self,name,gender=3):
@@ -541,13 +550,15 @@ class graphs():
 		plt.figure(figsize=(13,13))
 		nx.draw(self.entity_graph,with_labels=True,node_size=10, font_size=8)
 		plt.savefig("static/"+img_name)
-'''
+
+
 if __name__=="__main__":
-	parser = argparse.ArgumentParser()
-	parser.add_argument("--book", type=str)
-	args = parser.parse_args()
+	#parser = argparse.ArgumentParser()
+	#parser.add_argument("--book", type=str)
+	#args = parser.parse_args()
 	pre_processing(args.book)
-	graph_obj = graphs(args.book, 500)
-	graph_obj.entity_interaction_graph()
-	graph_obj.char_importance()
+	print("done")
+	#graph_obj = graphs(args.book, 500)
+	#graph_obj.entity_interaction_graph()
+	#graph_obj.char_importance()
 '''

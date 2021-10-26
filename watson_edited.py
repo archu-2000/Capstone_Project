@@ -103,8 +103,10 @@ def character_personality_plot(character, tone_analyzer, image_name, loc):
 	 
 	# Returns evenly spaced numbers
 	# over a specified interval.
-	
-	plt.clf()
+	try:
+		plt.clf()
+	except:
+		pass
 	for i,key in enumerate(emotion_arr):
 		
 		X_Y_Spline = make_interp_spline(x, np.array(emotion_arr_2[key]))

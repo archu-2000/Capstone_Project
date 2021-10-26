@@ -1,7 +1,7 @@
 from flask import * 
 from characterExtraction_new import *
 from watson_edited import *
-# from main4 import *
+from main4 import *
 import os, time, sqlite3, hashlib
 app = Flask(__name__)  
 import PyPDF2
@@ -15,6 +15,13 @@ dir_name=''
 uname = ''
 tone_analyzer=''
 characters=''
+
+text=''
+mc=''
+d=''
+tl=''
+
+lit = ''
 
 
 class A:
@@ -140,8 +147,14 @@ def select():
 		# loc=os.path.join(path, uname)
 		if os.path.exists(loc):
 			for i in os.listdir(loc):
-		    	#print("]]]]]]]]]]]]]]] ",uname)
-				os.remove(loc+'/'+i)
+				try:
+					os.remove(loc+'/'+i)
+				except:
+					for j in os.listdir(loc+'/'+i):
+						os.remove(loc+'/'+i+'/'+j)
+
+					os.rmdir(loc+'/'+i)
+
 			os.rmdir(loc)
 		os.mkdir(loc)
 		global fpath
@@ -171,6 +184,17 @@ def select():
 			file1.close()
 			pdffileobj.close()
 
+	global text
+	global d
+	global mc
+	global tl
+	text = readText(fpath)
+	entityNames = getCharacters(text)
+	d, mc, tl = mergeNames_count(entityNames)
+
+	global tone_analyzer
+	tone_analyzer = authenticate()
+
 	return render_template("select.html")  
 	#return render_template("select.html")
 	
@@ -178,37 +202,12 @@ character_name=''
 @app.route('/personality_profiling', methods=['POST', 'GET'])
 def personality_profiling():
 	if request.method == 'POST':
-		
-
-
-		# text = readText(fpath)
-		# chunkedSentences = chunkSentences(text)
-		# # print(list(chunkedSentences))
-		# entityNames = buildDict(chunkedSentences)
-		# # print(list(entityNames))
-		# removeStopwords(entityNames)
-		# majorCharacters = getMajorCharacters(entityNames)
-		# # print(list(majorCharacters))
-
-		# sentenceList = splitIntoSentences(text)
-		# characterSentences = compareLists(sentenceList, majorCharacters)
-		# #print("@@@@@@@@@@@@@@@@: ", characterSentences)
-
-		# #characterTones = extractTones(characterSentences)
-
-		# sentenceAnalysis = defaultdict(list,[(k, [characterSentences[k], 0]) for k in characterSentences])
-		# #CHANGE THE SENTENCE ANALAYSIS FILE NAME AND PATH
-
 		global fpath
 		global loc
-		
-		#print(sentenceAnalysis)
-		# writeAnalysis(sentenceAnalysis)
+		global text
+		global mc
+		global d
 
-		
-		text = readText(fpath)
-		entityNames = getCharacters(text)
-		d, mc, tl = mergeNames_count(entityNames)
 		sentenceList = splitIntoSentences(text)
 		characterSentences = compare_lists_new(sentenceList, mc, d)
 		print(list(characterSentences))
@@ -217,11 +216,6 @@ def personality_profiling():
 
 		global characters
 		characters = mc
-		global tone_analyzer
-		tone_analyzer = authenticate()
-
-		with open("chars.txt", "a") as f:
-			f.write("\n".join(characters))
 
 		return render_template("personality_profiling.html", names= mc)
 
@@ -321,43 +315,70 @@ def logout():
 
 @app.route("/network_graph", methods = ['POST'])
 def network_graph():
+
+	global fpath
+	global loc
+	global mc
+	global uname
+
+	with open(loc+"/chars.txt", "w") as f:
+		f.write("\n".join(mc))
+
 	iname = uname+str(time.time())+'_network.png'
-	degree_centrality_ranks = network_graph_main(loc, iname)
+	
+	degree_centrality_ranks = network_graph_main(loc, iname, "ip.txt")
 	l = {}
 	for i in range(len(degree_centrality_ranks)):
 		l[i+1]= degree_centrality_ranks[i]
 	print(l)
-
 	return render_template("network_graph.html", ranks = l, i1=iname)
 
 
 
-# @app.route("/choose_characters", methods = ['POST'])
-# def choose_characters():
-# 	text = readText()
-# 	chunkedSentences = chunkSentences(text)
-# 	# print(list(chunkedSentences))
-# 	entityNames = buildDict(chunkedSentences)
-# 	# print(list(entityNames))
-# 	removeStopwords(entityNames)
-# 	majorCharacters = getMajorCharacters(entityNames)
-# 	return render_template("choose_characters.html", names = majorCharacters)
+@app.route("/chapter_analysis", methods = ['POST'])
+def chapter_analysis():
 
-# @app.route("/character_networks", methods = ['POST'])
-# def character_networks():
-# 	character_name1=request.form.get('character1')
-# 	character_name2=request.form.get('character2')
-# 	character_name3=request.form.get('character3')
-# 	with open("ip.txt", "r") as f:
-#         	# text = f.read().decode('utf-8-sig')
-#         	text = f.read()
-# 	pre_processing(text)
-# 	graph_obj = graphs(text, 500)
-# 	entities = [character_name1, character_name2, character_name3]
-# 	img_name="entity_interaction_"+str(time.time())+".png"
-# 	graph_obj.entity_interaction_graph(entities, img_name)
-# 	#graph_obj.char_importance()
-# 	return render_template("character_networks.html", image = img_name)
+	global text
+	global loc
+	global tone_analyzer
+	global mc
+	global lit
+	lit = Literature(text, loc)
+	with open(loc+"/chars.txt", "w") as f:
+		f.write("\n".join(mc))
+
+
+	return render_template("chapter_analysis.html", num= lit.chapterNums, i1 = "placeholder.png", ranks=['Please select a chapter'])
+
+@app.route("/single_chapter_analysis", methods = ['POST'])
+def single_chapter_analysis():
+	global loc
+	global tone_analyzer
+	global uname
+
+	chapter_num = request.form.get('chapter')
+	print("Chap_#######:   ", chapter_num)
+	chapter_text = readText(loc+"/split_chapters/"+chapter_num+".txt")
+
+	'''
+	tone_analysis = tone_analyzer.tone(
+			{'text': chapter_text},
+			content_type='application/json',
+			tones = ['emotion', 'social', 'language']
+		).get_result()
+
+	chapter_tones= tone_analysis["document_tone"]["tone_categories"]
+	'''
+	iname = uname+str(time.time())+'_chapter_network.png'
+	
+	chapter_centrality_ranks = network_graph_main(loc, iname,"split_chapters/"+chapter_num+".txt")
+	l = {}
+	for i in range(len(chapter_centrality_ranks)):
+		l[i+1]= chapter_centrality_ranks[i]
+	print(l)
+	global lit
+	return render_template("chapter_analysis.html", num= lit.chapterNums, i1 = iname, ranks = l)
+
 	
 if __name__ == '__main__':  
 	app.run(debug = True)  
